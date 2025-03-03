@@ -7,6 +7,7 @@ let audioCtx;
 let startTime = 0;
 let subdivision = 1; // Default: quarter notes
 let beatCount = 0; // Track beats for accenting first beat
+let presetIndex = 0; // Track selected preset
 
 // Preset list with BPM and subdivision pairs
 let tempoPresets = [
@@ -22,6 +23,8 @@ function setup() {
     createCanvas(400, 400);
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     createUI();
+    window.addEventListener("keydown", handleKeyPress);
+    updatePresetDisplay();
 }
 
 function draw() {
@@ -82,7 +85,30 @@ function stopMetronome() {
 function setPreset(preset) {
     document.getElementById("bpm").value = preset.bpm;
     document.getElementById("subdivision").value = preset.subdivision;
-    startMetronome();
+    updatePresetDisplay();
+}
+
+function handleKeyPress(event) {
+    if (event.key === "ArrowRight") {
+        presetIndex = (presetIndex + 1) % tempoPresets.length;
+        setPreset(tempoPresets[presetIndex]);
+    } else if (event.key === "ArrowLeft") {
+        presetIndex = (presetIndex - 1 + tempoPresets.length) % tempoPresets.length;
+        setPreset(tempoPresets[presetIndex]);
+    } else if (event.key === " ") { // Spacebar
+        isRunning ? stopMetronome() : startMetronome();
+    }
+}
+
+function updatePresetDisplay() {
+    let display = document.getElementById("presetDisplay");
+    if (!display) {
+        display = document.createElement("div");
+        display.id = "presetDisplay";
+        display.style.marginTop = "10px";
+        document.body.appendChild(display);
+    }
+    display.textContent = `${tempoPresets[presetIndex].name} (${tempoPresets[presetIndex].bpm} BPM, Sub: ${tempoPresets[presetIndex].subdivision})`;
 }
 
 function createUI() {
@@ -100,10 +126,13 @@ function createUI() {
     controls.appendChild(subdivisionSelect);
     
     let presetContainer = document.createElement("div");
-    tempoPresets.forEach(preset => {
+    tempoPresets.forEach((preset, index) => {
         let btn = document.createElement("button");
         btn.textContent = preset.name + ` (${preset.bpm} BPM, Sub: ${preset.subdivision})`;
-        btn.onclick = () => setPreset(preset);
+        btn.onclick = () => {
+            presetIndex = index;
+            setPreset(preset);
+        };
         presetContainer.appendChild(btn);
     });
     controls.appendChild(presetContainer);
