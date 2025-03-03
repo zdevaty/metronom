@@ -6,8 +6,17 @@ let isRunning = false;
 let audioCtx;
 let startTime = 0;
 let subdivision = 1; // Default: quarter notes
-let tempoPresets = [60, 80, 100, 120, 140, 160];
 let beatCount = 0; // Track beats for accenting first beat
+
+// Preset list with BPM and subdivision pairs
+let tempoPresets = [
+    { name: "Nocka 1", bpm: 60, subdivision: 1 },
+    { name: "Nocka 2", bpm: 75, subdivision: 2 },
+    { name: "Nocka 3", bpm: 90, subdivision: 3 },
+    { name: "Nocka 4", bpm: 110, subdivision: 4 },
+    { name: "Nocka 5", bpm: 130, subdivision: 2 },
+    { name: "Nocka 6", bpm: 150, subdivision: 3 }
+];
 
 function setup() {
     createCanvas(400, 400);
@@ -70,8 +79,9 @@ function stopMetronome() {
     isRunning = false;
 }
 
-function setPreset(presetBPM) {
-    document.getElementById("bpm").value = presetBPM;
+function setPreset(preset) {
+    document.getElementById("bpm").value = preset.bpm;
+    document.getElementById("subdivision").value = preset.subdivision;
     startMetronome();
 }
 
@@ -92,7 +102,7 @@ function createUI() {
     let presetContainer = document.createElement("div");
     tempoPresets.forEach(preset => {
         let btn = document.createElement("button");
-        btn.textContent = preset + " BPM";
+        btn.textContent = preset.name + ` (${preset.bpm} BPM, Sub: ${preset.subdivision})`;
         btn.onclick = () => setPreset(preset);
         presetContainer.appendChild(btn);
     });
