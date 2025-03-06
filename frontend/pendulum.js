@@ -8,8 +8,8 @@ let startTime = 0;
 let subdivision = 1; // Default: quarter notes
 let beatCount = 0; // Track beats for accenting first beat
 let presetIndex = 0; // Track selected preset
-let tickSound = new Audio("tick.mp3");
-let accentSound = new Audio("tock.mp3");
+let tickBuffer, accentBuffer;
+let nextTickTime = 0;
 
 // Preset list with BPM and subdivision pairs
 let tempoPresets = [
@@ -24,9 +24,19 @@ let tempoPresets = [
 function setup() {
     createCanvas(400, 400);
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    loadSounds();
     createUI();
     window.addEventListener("keydown", handleKeyPress);
     updatePresetDisplay();
+}
+
+function loadSounds() {
+    fetch("tick.mp3").then(response => response.arrayBuffer()).then(data => {
+        audioCtx.decodeAudioData(data, buffer => tickBuffer = buffer);
+    });
+    fetch("tock.mp3").then(response => response.arrayBuffer()).then(data => {
+        audioCtx.decodeAudioData(data, buffer => accentBuffer = buffer);
+    });
 }
 
 function draw() {
@@ -40,12 +50,6 @@ function draw() {
     }
 
     drawMetronome();
-    
-    if (isRunning && millis() - lastTick >= interval / subdivision) {
-        playTick(beatCount % subdivision === 0);
-        lastTick = millis(); // Use absolute timing to avoid drift
-        beatCount++;
-    }
 }
 
 function drawMetronome() {
@@ -60,13 +64,20 @@ function drawMetronome() {
 }
 
 function playTick(isFirstBeat) {
-    if (isFirstBeat) {
-        accentSound.currentTime = 0;
-        accentSound.play();
-    } else {
-        tickSound.currentTime = 0;
-        tickSound.play();
+    let source = audioCtx.createBufferSource();
+    source.buffer = isFirstBeat ? accentBuffer : tickBuffer;
+    source.connect(audioCtx.destination);
+    source.start(nextTickTime);
+}
+
+function scheduleTicks() {
+    if (!isRunning) return;
+    while (nextTickTime < audioCtx.currentTime + 0.1) { // Schedule 100ms ahead
+        playTick(beatCount % subdivision === 0);
+        nextTickTime += interval / 1000 / subdivision;
+        beatCount++;
     }
+    setTimeout(scheduleTicks, 25);
 }
 
 function startMetronome() {
@@ -74,9 +85,10 @@ function startMetronome() {
     interval = 60000 / bpm;
     subdivision = parseInt(document.getElementById("subdivision").value);
     isRunning = true;
-    startTime = millis(); // Reset start time to sync animation with ticking
-    lastTick = -1000000; // Ensure first tick happens immediately
+    startTime = millis();
+    nextTickTime = audioCtx.currentTime;
     beatCount = 0;
+    scheduleTicks();
 }
 
 function stopMetronome() {
@@ -98,7 +110,7 @@ function handleKeyPress(event) {
     } else if (event.key === "ArrowLeft") {
         presetIndex = (presetIndex - 1 + tempoPresets.length) % tempoPresets.length;
         setPreset(tempoPresets[presetIndex]);
-    } else if (event.key === " ") { // Spacebar
+    } else if (event.key === " ") {
         isRunning ? stopMetronome() : startMetronome();
     }
 }
