@@ -80,11 +80,13 @@ function startMetronome() {
 
 function stopMetronome() {
     isRunning = false;
+    angle = -45;
 }
 
 function setPreset(preset) {
     document.getElementById("bpm").value = preset.bpm;
     document.getElementById("subdivision").value = preset.subdivision;
+    startMetronome();
     updatePresetDisplay();
 }
 
