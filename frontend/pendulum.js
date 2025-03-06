@@ -32,7 +32,7 @@ function draw() {
     let time = millis() - startTime;
     
     if (isRunning) {
-        let totalBeatsElapsed = (time / interval) * subdivision / 2; // Count beats precisely
+        let totalBeatsElapsed = (time / interval) / 2; // Count beats precisely
         let phase = (totalBeatsElapsed % 1); // Normalize phase (0 to 1)
         angle = Math.sin(phase * PI * 2) * 45; // Sync pendulum with tick
     }
