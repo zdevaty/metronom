@@ -8,6 +8,8 @@ let startTime = 0;
 let subdivision = 1; // Default: quarter notes
 let beatCount = 0; // Track beats for accenting first beat
 let presetIndex = 0; // Track selected preset
+let tickSound = new Audio("tick.mp3");
+let accentSound = new Audio("tock.mp3");
 
 // Preset list with BPM and subdivision pairs
 let tempoPresets = [
@@ -33,7 +35,7 @@ function draw() {
     
     if (isRunning) {
         let totalBeatsElapsed = (time / interval) / 2; // Count beats precisely
-        let phase = (totalBeatsElapsed-0.25 % 1); // Normalize phase (0 to 1). -0.25 to beat in extremes, not center
+        let phase = (totalBeatsElapsed - 0.25 % 1); // Normalize phase (0 to 1). -0.25 to beat in extremes, not center
         angle = Math.sin(phase * PI * 2) * 45; // Sync pendulum with tick
     }
 
@@ -58,14 +60,13 @@ function drawMetronome() {
 }
 
 function playTick(isFirstBeat) {
-    let osc = audioCtx.createOscillator();
-    let gainNode = audioCtx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    osc.frequency.value = isFirstBeat ? 1200 : 800; // Higher tone for first beat
-    gainNode.gain.value = isFirstBeat ? 0.3 : 0.2; // Louder first beat
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
+    if (isFirstBeat) {
+        accentSound.currentTime = 0;
+        accentSound.play();
+    } else {
+        tickSound.currentTime = 0;
+        tickSound.play();
+    }
 }
 
 function startMetronome() {
