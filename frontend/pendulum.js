@@ -1,3 +1,5 @@
+const VISUAL_OFFSET_MS = -50; // Visual offset in milliseconds (adjust as needed)
+
 let angle = -45; // Starting angle for pendulum
 let bpm = 120; // Default BPM
 let interval = 60000 / bpm; // Convert BPM to ms
@@ -72,7 +74,7 @@ function setup() {
 
 function draw() {
     background(0); // Dark background
-    let time = millis() - startTime;
+    let time = millis() - startTime + VISUAL_OFFSET_MS; // offset added here
 
     if (isRunning) {
         let totalBeatsElapsed = (time / interval) / 2;
