@@ -70,19 +70,10 @@ function setup() {
     updatePresetDisplay();
 }
 
-function loadSounds() {
-    fetch("tick.mp3").then(response => response.arrayBuffer()).then(data => {
-        audioCtx.decodeAudioData(data, buffer => tickBuffer = buffer);
-    });
-    fetch("tock.mp3").then(response => response.arrayBuffer()).then(data => {
-        audioCtx.decodeAudioData(data, buffer => accentBuffer = buffer);
-    });
-}
-
 function draw() {
     background(220);
     let time = millis() - startTime;
-    
+
     if (isRunning) {
         let totalBeatsElapsed = (time / interval) / 2; // Count beats precisely
         let phase = (totalBeatsElapsed - 0.25 % 1); // Normalize phase (0 to 1). -0.25 to beat in extremes, not center
@@ -101,6 +92,15 @@ function drawMetronome() {
     rotate(radians(angle));
     line(0, 0, 0, 150); // Pendulum
     pop();
+}
+
+function loadSounds() {
+    fetch("tick.mp3").then(response => response.arrayBuffer()).then(data => {
+        audioCtx.decodeAudioData(data, buffer => tickBuffer = buffer);
+    });
+    fetch("tock.mp3").then(response => response.arrayBuffer()).then(data => {
+        audioCtx.decodeAudioData(data, buffer => accentBuffer = buffer);
+    });
 }
 
 function playTick(isAccented) {
@@ -205,5 +205,3 @@ function highlightSelectedPreset(containers, selectedPresetDiv) {
     selectedPresetDiv.style.backgroundColor = "#d0eaff";
     selectedPresetDiv.style.borderColor = "#007bff";
 }
-
-
