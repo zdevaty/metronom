@@ -118,39 +118,48 @@ function handleKeyPress(event) {
 
 function updatePresetDisplay() {
     let display = document.getElementById("presetDisplay");
-    if (!display) {
-        display = document.createElement("div");
-        display.id = "presetDisplay";
-        display.style.marginTop = "10px";
-        document.body.appendChild(display);
-    }
     display.textContent = `${currentPreset.name} (${currentPreset.bpm} BPM, Sub: ${currentPreset.subdivision}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}])`;
 }
 
 function createUI() {
     let controls = document.getElementById("controls");
 
-    let subdivisionSelect = document.createElement("select");
-    subdivisionSelect.id = "subdivision";
-    let options = { "Quarter Notes": 1, "Eighth Notes": 2, "Triplets": 3, "Sixteenth Notes": 4 };
-    for (let key in options) {
-        let option = document.createElement("option");
-        option.value = options[key];
-        option.textContent = key;
-        subdivisionSelect.appendChild(option);
-    }
-    controls.appendChild(subdivisionSelect);
-
     let presetContainer = document.createElement("div");
+    presetContainer.style.display = "grid";
+    presetContainer.style.gridTemplateColumns = "1fr 1fr";
+    presetContainer.style.gap = "10px";
+    presetContainer.style.marginTop = "10px";
+
     tempoPresets.forEach((preset, index) => {
-        let btn = document.createElement("button");
-        btn.textContent = `${preset.name} (${preset.bpm} BPM, Sub: ${preset.subdivision}, Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}])`;
-        btn.onclick = () => {
+        let presetDiv = document.createElement("div");
+        presetDiv.innerHTML = `<strong>${preset.name}</strong><br>${preset.bpm} BPM | Sub: ${preset.subdivision}<br>Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]`;
+        presetDiv.style.padding = "10px";
+        presetDiv.style.border = "1px solid #ccc";
+        presetDiv.style.borderRadius = "8px";
+        presetDiv.style.backgroundColor = "#f8f8f8";
+        presetDiv.style.cursor = "pointer";
+        presetDiv.style.textAlign = "center";
+        presetDiv.style.userSelect = "none";
+
+        presetDiv.addEventListener("click", () => {
             presetIndex = index;
             setPreset(preset);
-        };
-        presetContainer.appendChild(btn);
+            highlightSelectedPreset(presetContainer, presetDiv);
+        });
+
+        presetContainer.appendChild(presetDiv);
     });
+
     controls.appendChild(presetContainer);
 }
+
+function highlightSelectedPreset(container, selectedPresetDiv) {
+    Array.from(container.children).forEach(div => {
+        div.style.backgroundColor = "#f8f8f8";
+        div.style.borderColor = "#ccc";
+    });
+    selectedPresetDiv.style.backgroundColor = "#d0eaff";
+    selectedPresetDiv.style.borderColor = "#007bff";
+}
+
 
