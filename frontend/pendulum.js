@@ -11,15 +11,15 @@ let presetIndex = 0; // Track selected preset
 let tickBuffer, accentBuffer;
 let nextTickTime = 0;
 
-// Preset list with BPM and subdivision pairs
 let tempoPresets = [
-    { name: "Nocka 1", bpm: 60, subdivision: 1 },
-    { name: "Nocka 2", bpm: 75, subdivision: 2 },
-    { name: "Nocka 3", bpm: 90, subdivision: 3 },
-    { name: "Nocka 4", bpm: 110, subdivision: 4 },
-    { name: "Nocka 5", bpm: 130, subdivision: 2 },
-    { name: "Nocka 6", bpm: 150, subdivision: 3 }
+    { name: "Nocka 1", bpm: 60, subdivision: 1, accentBeats: [0] },
+    { name: "Nocka 2", bpm: 90, subdivision: 3, accentBeats: [0, 1] },
+    { name: "Nocka 3", bpm: 90, subdivision: 3, accentBeats: [0, 2] },
+    { name: "Nocka 4", bpm: 110, subdivision: 4, accentBeats: [0, 1] },
+    { name: "Nocka 5", bpm: 130, subdivision: 2, accentBeats: [1] },
+    { name: "Nocka 6", bpm: 150, subdivision: 3, accentBeats: [0, 1, 2] }
 ];
+let currentPreset = tempoPresets[0];
 
 function setup() {
     createCanvas(400, 400);
@@ -63,17 +63,19 @@ function drawMetronome() {
     pop();
 }
 
-function playTick(isFirstBeat) {
+function playTick(isAccented) {
     let source = audioCtx.createBufferSource();
-    source.buffer = isFirstBeat ? accentBuffer : tickBuffer;
+    source.buffer = isAccented ? accentBuffer : tickBuffer;
     source.connect(audioCtx.destination);
     source.start(nextTickTime);
 }
 
 function scheduleTicks() {
     if (!isRunning) return;
-    while (nextTickTime < audioCtx.currentTime + 0.1) { // Schedule 100ms ahead
-        playTick(beatCount % subdivision === 0);
+    while (nextTickTime < audioCtx.currentTime + 0.1) {
+        let beatInMeasure = beatCount % subdivision;
+        let isAccented = currentPreset.accentBeats.includes(beatInMeasure);
+        playTick(isAccented);
         nextTickTime += interval / 1000 / subdivision;
         beatCount++;
     }
@@ -81,9 +83,9 @@ function scheduleTicks() {
 }
 
 function startMetronome() {
-    bpm = parseInt(document.getElementById("bpm").value);
+    bpm = currentPreset.bpm;
     interval = 60000 / bpm;
-    subdivision = parseInt(document.getElementById("subdivision").value);
+    subdivision = currentPreset.subdivision;
     isRunning = true;
     startTime = millis();
     nextTickTime = audioCtx.currentTime;
@@ -97,8 +99,7 @@ function stopMetronome() {
 }
 
 function setPreset(preset) {
-    document.getElementById("bpm").value = preset.bpm;
-    document.getElementById("subdivision").value = preset.subdivision;
+    currentPreset = preset;
     startMetronome();
     updatePresetDisplay();
 }
@@ -123,12 +124,12 @@ function updatePresetDisplay() {
         display.style.marginTop = "10px";
         document.body.appendChild(display);
     }
-    display.textContent = `${tempoPresets[presetIndex].name} (${tempoPresets[presetIndex].bpm} BPM, Sub: ${tempoPresets[presetIndex].subdivision})`;
+    display.textContent = `${currentPreset.name} (${currentPreset.bpm} BPM, Sub: ${currentPreset.subdivision}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}])`;
 }
 
 function createUI() {
     let controls = document.getElementById("controls");
-    
+
     let subdivisionSelect = document.createElement("select");
     subdivisionSelect.id = "subdivision";
     let options = { "Quarter Notes": 1, "Eighth Notes": 2, "Triplets": 3, "Sixteenth Notes": 4 };
@@ -139,11 +140,11 @@ function createUI() {
         subdivisionSelect.appendChild(option);
     }
     controls.appendChild(subdivisionSelect);
-    
+
     let presetContainer = document.createElement("div");
     tempoPresets.forEach((preset, index) => {
         let btn = document.createElement("button");
-        btn.textContent = preset.name + ` (${preset.bpm} BPM, Sub: ${preset.subdivision})`;
+        btn.textContent = `${preset.name} (${preset.bpm} BPM, Sub: ${preset.subdivision}, Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}])`;
         btn.onclick = () => {
             presetIndex = index;
             setPreset(preset);
@@ -152,3 +153,4 @@ function createUI() {
     });
     controls.appendChild(presetContainer);
 }
+
