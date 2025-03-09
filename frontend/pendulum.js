@@ -71,26 +71,36 @@ function setup() {
 }
 
 function draw() {
-    background(220);
+    background(30); // Dark background
     let time = millis() - startTime;
 
     if (isRunning) {
-        let totalBeatsElapsed = (time / interval) / 2; // Count beats precisely
-        let phase = (totalBeatsElapsed - 0.25 % 1); // Normalize phase (0 to 1). -0.25 to beat in extremes, not center
-        angle = Math.sin(phase * PI * 2) * 45; // Sync pendulum with tick
+        let totalBeatsElapsed = (time / interval) / 2;
+        let phase = (totalBeatsElapsed - 0.25 % 1);
+        angle = Math.sin(phase * PI * 2) * 45;
     }
 
     drawMetronome();
 }
 
 function drawMetronome() {
-    translate(width / 2, height / 3);
-    stroke(0);
-    strokeWeight(8);
-    line(0, 0, 0, 150); // Base
     push();
-    rotate(radians(angle));
-    line(0, 0, 0, 150); // Pendulum
+    // Set the pivot clearly visible, a bit down from top center
+    translate(width / 2, height * 0.85);
+
+    const pendulumLength = height * 0.7; // 70% of canvas height
+    const arcDiameter = pendulumLength * 2;
+
+    // Draw the visible swing range
+    noStroke();
+    fill(50);
+    arc(0, 0, arcDiameter, arcDiameter, radians(-135), radians(-45), PIE);
+
+    // Rotate pendulum correctly (upside down)
+    rotate(radians(angle - 180));
+    stroke(255);
+    strokeWeight(8);
+    line(0, 0, 0, pendulumLength);
     pop();
 }
 
