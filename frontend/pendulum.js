@@ -60,7 +60,7 @@ let tempoPresets = [
 let currentPreset = tempoPresets[0];
 
 function setup() {
-    let canvas = createCanvas(600, 600);
+    let canvas = createCanvas(800, 800);
     canvas.parent('metronomeCanvas'); // Place canvas in specific div
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -71,7 +71,7 @@ function setup() {
 }
 
 function draw() {
-    background(30); // Dark background
+    background(0); // Dark background
     let time = millis() - startTime;
 
     if (isRunning) {
@@ -88,15 +88,15 @@ function drawMetronome() {
     // Set the pivot clearly visible, a bit down from top center
     translate(width / 2, height * 0.85);
 
-    const pendulumLength = height * 0.7; // 70% of canvas height
+    const pendulumLength = height * 0.7;
     const arcDiameter = pendulumLength * 2;
 
     // Draw the visible swing range
     noStroke();
-    fill(50);
+    fill(30);
     arc(0, 0, arcDiameter, arcDiameter, radians(-135), radians(-45), PIE);
 
-    // Rotate pendulum correctly (upside down)
+    // Rotate pendulum (upside down)
     rotate(radians(angle - 180));
     stroke(255);
     strokeWeight(8);
@@ -182,9 +182,10 @@ function createUI() {
             ${preset.bpm > 0 ? `${preset.bpm} BPM | Sub: ${preset.subdivision} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
         `;
         presetDiv.style.padding = "8px";
-        presetDiv.style.border = "1px solid #ccc";
+        presetDiv.style.border = "1px solid #555";
         presetDiv.style.borderRadius = "6px";
-        presetDiv.style.backgroundColor = "#f8f8f8";
+        presetDiv.style.backgroundColor = "#333";
+        presetDiv.style.color = "#ddd";
         presetDiv.style.cursor = "pointer";
         presetDiv.style.textAlign = "center";
         presetDiv.style.userSelect = "none";
@@ -197,7 +198,7 @@ function createUI() {
         });
 
         // Place first 20 presets in left column, the rest in right column
-        if (index < 20) {
+        if (index < 23) {
             leftContainer.appendChild(presetDiv);
         } else {
             rightContainer.appendChild(presetDiv);
@@ -208,10 +209,12 @@ function createUI() {
 function highlightSelectedPreset(containers, selectedPresetDiv) {
     containers.forEach(container => {
         Array.from(container.children).forEach(div => {
-            div.style.backgroundColor = "#f8f8f8";
-            div.style.borderColor = "#ccc";
+            div.style.backgroundColor = "#333";
+            div.style.borderColor = "#555";
+            div.style.color = "#ddd";
         });
     });
-    selectedPresetDiv.style.backgroundColor = "#d0eaff";
-    selectedPresetDiv.style.borderColor = "#007bff";
+    selectedPresetDiv.style.backgroundColor = "#005299";
+    selectedPresetDiv.style.borderColor = "#66b8ff";
+    selectedPresetDiv.style.color = "#fff";
 }
