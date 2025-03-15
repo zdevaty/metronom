@@ -1,4 +1,4 @@
-const VISUAL_OFFSET_MS = -50; // Visual offset in milliseconds (adjust as needed)
+const VISUAL_OFFSET_MS = -0; // Visual offset in milliseconds (adjust as needed)
 
 let angle = -45; // Starting angle for pendulum
 let bpm = 120; // Default BPM
@@ -14,49 +14,49 @@ let tickBuffer, accentBuffer;
 let nextTickTime = 0;
 
 let tempoPresets = [
-    { name: "1. Zabili", bpm: 70, subdivision: 3, accentBeats: [0] },
-    { name: "2. Křížem krážem", bpm: 120, subdivision: 4, accentBeats: [0] },
-    { name: "3. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "4. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "5. Ani tak nehoří", bpm: 60, subdivision: 1, accentBeats: [0] },
-    { name: "6. Nepůjdu od tebe", bpm: 160, subdivision: 4, accentBeats: [0] },
-    { name: "7. Šibeničky", bpm: 110, subdivision: 4, accentBeats: [0] },
-    { name: "8. Tmavá Nocka 2", bpm: 64, subdivision: 6, accentBeats: [0] },
-    { name: "9. Ořešany", bpm: 92, subdivision: 4, accentBeats: [0] },
-    { name: "10. Nebudu orat ani set", bpm: 120, subdivision: 3, accentBeats: [0] },
+    { name: "1. Zabili", bpm: 70, subdivision: 1, accentBeats: [0] },
+    { name: "2. Křížem krážem", bpm: 120, subdivision: 1, accentBeats: [0] },
+    { name: "3. Tmavá nocka 1", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "4. Z Kokavy", bpm: 76, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "5. Ani tak nehoří", bpm: 60, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "6. Nepůjdu od tebe", bpm: 160, subdivision: 1, accentBeats: [0] },
+    { name: "7. Šibeničky", bpm: 110, subdivision: 1, accentBeats: [0] },
+    { name: "8. Tmavá Nocka 2", bpm: 64, subdivision: 1, accentBeats: [0] },
+    { name: "9. Horní, Dolní Ořešany", bpm: 92, subdivision: 1, accentBeats: [0] },
+    { name: "10. Nebudu orat ani set", bpm: 120, subdivision: 1, accentBeats: [0] },
     { name: "11. Tam v tom lese v Bukovině", bpm: 64, subdivision: 2, accentBeats: [0] },
     { name: "12. Tam v tom lese v Bukovině", bpm: 64, subdivision: 2, accentBeats: [0] },
-    { name: "13. Nocka 3", bpm: 74, subdivision: 4, accentBeats: [0] },
-    { name: "14. Kterýpak jste který", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "15. Nepovídej milá mamince", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "16. Tam u řeky na kraji", bpm: 174, subdivision: 6, accentBeats: [0] },
+    { name: "13. Tmavá nocka 3", bpm: 74, subdivision: 1, accentBeats: [0] },
+    { name: "14. Kterýpak jste který", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "15. Nepovídej milá mamince", bpm: 94, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "16. Tam u řeky na kraji", bpm: 174, subdivision: 1, accentBeats: [0] },
     { name: "17. Pod javorem na tom poli", bpm: 55, subdivision: 2, accentBeats: [0] },
-    { name: "18. Tam nahoře na tom kopci", bpm: 76, subdivision: 2, accentBeats: [0] },
+    { name: "18. Tam nahoře na tom kopci", bpm: 76, subdivision: 1, accentBeats: [0] },
     { name: "19. Večer zmizí", bpm: 70, subdivision: 1, accentBeats: [0] },
-    { name: "20. Ach bože přebože", bpm: 176, subdivision: 8, accentBeats: [0, 3, 6] },
-    { name: "21. Chytají mě chlapci", bpm: 63, subdivision: 4, accentBeats: [0] },
-    { name: "22. Kamarádi moji", bpm: 80, subdivision: 4, accentBeats: [0] },
-    { name: "23. Milá moje milá", bpm: 97, subdivision: 4, accentBeats: [0] },
-    { name: "24. Pojďme chlapci", bpm: 144, subdivision: 4, accentBeats: [0] },
+    { name: "20. Ach bože přebože", bpm: 176, subdivision: 1, accentBeats: [0, 3, 6] },
+    { name: "21. Chytají mě chlapci", bpm: 63, subdivision: 1, accentBeats: [0] },
+    { name: "22. Kamarádi moji", bpm: 80, subdivision: 1, accentBeats: [0] },
+    { name: "23. Milá moje milá", bpm: 97, subdivision: 1, accentBeats: [0] },
+    { name: "24. Pojďme chlapci", bpm: 144, subdivision: 1, accentBeats: [0] },
     { name: "25. Zazpívejme,chlapci", bpm: 66, subdivision: 1, accentBeats: [0] },
-    { name: "26. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "27. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "28. My jsme dobří chlapci", bpm: 68, subdivision: 4, accentBeats: [0] },
-    { name: "29. Nocka 5", bpm: 66, subdivision: 4, accentBeats: [0] },
-    { name: "30. Chodí horou", bpm: 125, subdivision: 4, accentBeats: [0] },
-    { name: "31. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "32. Jatelinka", bpm: 132, subdivision: 4, accentBeats: [0] },
-    { name: "33. Tam u řeky na kraji", bpm: 174, subdivision: 6, accentBeats: [0] },
-    { name: "34. Ani tak nehoří", bpm: 60, subdivision: 1, accentBeats: [0] },
-    { name: "35. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "36. Kamarádi moji", bpm: 80, subdivision: 4, accentBeats: [0] },
-    { name: "37. Stavěli", bpm: 147, subdivision: 4, accentBeats: [0] },
-    { name: "37. Stavěli 2", bpm: 105, subdivision: 3, accentBeats: [0] },
-    { name: "38. Nocka 6", bpm: 69, subdivision: 4, accentBeats: [0] },
-    { name: "39. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "40. Řekněte mamce", bpm: 70, subdivision: 4, accentBeats: [0] },
-    { name: "41. ", bpm: 0, subdivision: 1, accentBeats: [0] },
-    { name: "42. Zabili", bpm: 70, subdivision: 3, accentBeats: [0] }
+    { name: "26. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "27. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "28. My jsme dobří chlapci", bpm: 68, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "29. Nocka 5", bpm: 66, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "30. Chodí horou", bpm: 125, subdivision: 1, accentBeats: [0] },
+    { name: "31. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "32. Jatelinka", bpm: 132, subdivision: 1, accentBeats: [0] },
+    { name: "33. Tam u řeky na kraji", bpm: 174, subdivision: 1, accentBeats: [0] },
+    { name: "34. Ani tak nehoří", bpm: 60, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "35. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "36. Kamarádi moji", bpm: 80, subdivision: 1, accentBeats: [0] },
+    { name: "37. Stavěli", bpm: 147, subdivision: 1, accentBeats: [0] },
+    { name: "37. Stavěli 2", bpm: 105, subdivision: 1, accentBeats: [0] },
+    { name: "38. Nocka 6", bpm: 69, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "39. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "40. Řekněte mamce", bpm: 70, subdivision: 1, accentBeats: [0] },
+    { name: "41. ", bpm: 0, subdivision: 1, accentBeats: [0] }, //zešednout
+    { name: "42. Zabili", bpm: 70, subdivision: 1, accentBeats: [0] }
 ];
 
 let currentPreset = tempoPresets[0];
