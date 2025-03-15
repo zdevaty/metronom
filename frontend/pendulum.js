@@ -12,6 +12,8 @@ let beatCount = 0; // Track beats for accenting first beat
 let presetIndex = 0; // Track selected preset
 let tickBuffer, accentBuffer;
 let nextTickTime = 0;
+let flashAlpha = 0; // Controls flash intensity
+const FLASH_DECAY = 10; // How fast the flash fades out
 
 let tempoPresets = [
     { name: "1. Zabili", bpm: 70, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
@@ -82,6 +84,13 @@ function draw() {
         angle = Math.sin(phase * PI * 2) * 45;
     }
 
+    // **Apply the flash effect as a white overlay**
+    if (flashAlpha > 0) {
+        fill(255, flashAlpha); // White overlay with variable transparency
+        rect(0, 0, width, height); // Cover entire screen
+        flashAlpha = max(0, flashAlpha - FLASH_DECAY); // Reduce flash gradually
+    }
+
     drawMetronome();
 }
 
@@ -126,9 +135,15 @@ function scheduleTicks() {
     if (!isRunning) return;
     while (nextTickTime < audioCtx.currentTime + 0.1) {
         let beatInMeasure = beatCount % currentPreset.beatsPerMeasure;
-        console.log(beatInMeasure);
         let isAccented = currentPreset.accentBeats.includes(beatInMeasure);
+
         playTick(isAccented);
+
+        // **Trigger flash only on whole beats (not subdivisions)**
+        if (beatInMeasure % subdivision === 0) {
+            flashAlpha = isAccented ? 200 : 100; // Brighter flash on accented beats
+        }
+
         nextTickTime += interval / 1000 / subdivision;
         beatCount++;
     }
