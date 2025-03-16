@@ -13,7 +13,7 @@ let presetIndex = 0; // Track selected preset
 let tickBuffer, accentBuffer;
 let nextTickTime = 0;
 let flashAlpha = 0; // Controls flash intensity
-const FLASH_DECAY = 10; // How fast the flash fades out
+const FLASH_DECAY = 50; // How fast the flash fades out
 
 let tempoPresets = [
     { name: "1. Zabili", bpm: 70, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
