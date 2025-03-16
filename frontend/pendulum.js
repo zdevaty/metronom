@@ -151,14 +151,35 @@ function scheduleTicks() {
 }
 
 function startMetronome() {
-    bpm = currentPreset.bpm;
-    interval = 60000 / bpm;
+    updateBPM();
     subdivision = currentPreset.subdivision;
     isRunning = true;
     startTime = millis();
     nextTickTime = audioCtx.currentTime;
     beatCount = 0;
     scheduleTicks();
+}
+
+function updateBPM() {
+    let oldInterval = interval;
+    bpm = currentPreset.bpm;
+    interval = 60000 / bpm;
+
+    // Calculate how far into the current beat we are (in audio context time)
+    let timeNow = audioCtx.currentTime;
+    let timeSinceLastTick = timeNow - (nextTickTime - oldInterval / 1000 / subdivision);
+    let beatProgressRatio = timeSinceLastTick / (oldInterval / 1000 / subdivision);
+
+    // Adjust next tick time based on new interval
+    nextTickTime = timeNow + ((1 - beatProgressRatio) * (interval / 1000 / subdivision));
+
+    // Also update startTime to keep visuals synchronized
+    let visualTimeNow = millis();
+    let timeSinceVisualStart = visualTimeNow - startTime;
+    let visualProgressRatio = timeSinceVisualStart / oldInterval;
+
+    // Recalculate startTime for visuals
+    startTime = visualTimeNow - visualProgressRatio * interval;
 }
 
 function stopMetronome() {
@@ -181,6 +202,14 @@ function handleKeyPress(event) {
         setPreset(tempoPresets[presetIndex]);
     } else if (event.key === " ") {
         isRunning ? stopMetronome() : startMetronome();
+    } else if (event.key === "ArrowUp") {
+        currentPreset.bpm++;
+        updateBPM();
+        updatePresetDisplay();
+    } else if (event.key === "ArrowDown") {
+        currentPreset.bpm--;
+        updateBPM();
+        updatePresetDisplay();
     }
 
     // **Find the selected preset's div and highlight it**
