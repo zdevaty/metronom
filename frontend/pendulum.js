@@ -242,20 +242,21 @@ function createUI() {
 }
 
 function highlightSelectedPreset(containers, selectedPresetDiv) {
+    presetIter = 0;
     containers.forEach(container => {
-        Array.from(container.children).forEach((div, index) => {
-            let preset = tempoPresets[index]; // Get corresponding preset
+        Array.from(container.children).forEach((div) => {
+            let preset = tempoPresets[presetIter++]; // Get corresponding preset
 
             if (!preset.drums) {
                 // Keep gray tint for presets without drums
                 div.style.backgroundColor = "#222";
-                div.style.borderColor = "#444";
                 div.style.color = "#888";
+                div.style.borderColor = "#444";
             } else {
                 // Normal colors for other presets
                 div.style.backgroundColor = "#333";
-                div.style.borderColor = "#555";
                 div.style.color = "#ddd";
+                div.style.borderColor = "#555";
             }
         });
     });
