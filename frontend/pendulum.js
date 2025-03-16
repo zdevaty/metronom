@@ -182,6 +182,15 @@ function handleKeyPress(event) {
     } else if (event.key === " ") {
         isRunning ? stopMetronome() : startMetronome();
     }
+
+    // **Find the selected preset's div and highlight it**
+    const containers = [document.getElementById("presetContainerLeft"), document.getElementById("presetContainerRight")];
+    let allPresets = [...containers[0].children, ...containers[1].children];
+    let selectedPresetDiv = allPresets[presetIndex];
+
+    if (selectedPresetDiv) {
+        highlightSelectedPreset(containers, selectedPresetDiv);
+    }
 }
 
 function updatePresetDisplay() {
