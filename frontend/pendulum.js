@@ -228,16 +228,19 @@ function createUI() {
     tempoPresets.forEach((preset, index) => {
         let presetDiv = document.createElement("div");
         presetDiv.innerHTML = `
-            <strong>${preset.name || "(Empty)"}</strong><br>
-            ${preset.bpm > 0 ? `${preset.bpm} BPM | Dob: ${preset.beatsPerMeasure} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
+            <strong>${preset.name}</strong><br>
+            <span class="small-text">
+                ${preset.bpm > 0 ? `${preset.bpm} BPM | Dob: ${preset.beatsPerMeasure} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
+            </span>
         `;
-        presetDiv.style.padding = "8px";
+        presetDiv.style.padding = "1px";
         presetDiv.style.border = "1px solid #555";
-        presetDiv.style.borderRadius = "6px";
+        presetDiv.style.borderRadius = "2px";
         presetDiv.style.cursor = "pointer";
         presetDiv.style.textAlign = "center";
+        presetDiv.style.lineHeight = "1";
         presetDiv.style.userSelect = "none";
-        presetDiv.style.marginBottom = "8px";
+        presetDiv.style.marginBottom = "2px";
 
         if (!preset.drums) {
             presetDiv.style.backgroundColor = "#222"; // Darker gray
