@@ -7,7 +7,6 @@ let lastTick = 0;
 let isRunning = false;
 let audioCtx;
 let startTime = 0;
-let subdivision = 1; // Default: quarter notes
 let beatCount = 0; // Track beats for accenting first beat
 let presetIndex = 0; // Track selected preset
 let tickBuffer, accentBuffer;
@@ -16,48 +15,48 @@ let flashAlpha = 0; // Controls flash intensity
 const FLASH_DECAY = 50; // How fast the flash fades out
 
 let tempoPresets = [
-    { name: "1. Zabili", bpm: 70, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "2. Křížem krážem", bpm: 120, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "3. Tmavá nocka 1", bpm: 75, beatsPerMeasure: 2, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "4. Z Kokavy", bpm: 76, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "5. Ani tak nehoří", bpm: 60, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "6. Nepůjdu od tebe", bpm: 160, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "7. Šibeničky", bpm: 110, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "8. Tmavá Nocka 2", bpm: 64, beatsPerMeasure: 6, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "9. Horní, Dolní Ořešany", bpm: 87, beatsPerMeasure: 2, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "10. Nebudu orat ani set", bpm: 120, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "11. + 12. Tam v tom lese v Bukovině", bpm: 128, beatsPerMeasure: 2, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "13. Tmavá nocka 3", bpm: 74, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "14. Kterýpak jste který", bpm: 82, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "15. Nepovídej milá mamince", bpm: 94, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "16. Tam u řeky na kraji", bpm: 174, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "17. Pod javorem na tom poli", bpm: 165, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "18. Tam nahoře na tom kopci", bpm: 76, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "19. Večer zmizí", bpm: 78, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "20. Ach bože přebože", bpm: 176, beatsPerMeasure: 8, subdivision: 1, accentBeats: [0, 3, 6], drums: true},
-    { name: "21. Chytají mě chlapci", bpm: 58, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "22. Kamarádi moji", bpm: 80, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "23. Milá moje milá", bpm: 97, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "24. Pojďme chlapci", bpm: 144, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "25. Zazpívejme,chlapci", bpm: 66, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "26. Jede forman dolinou", bpm: 144, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "27. Tmavá nocka 4", bpm: 65, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "28. My jsme dobří chlapci", bpm: 68, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "29. Nocka 5", bpm: 66, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "30. Chodí horou", bpm: 125, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "31. Nepůjdu od tebe", bpm: 68, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "32. Jatelinka", bpm: 132, beatsPerMeasure: 4, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "33. Tam u řeky na kraji", bpm: 174, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "34. Ani tak nehoří", bpm: 60, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "35. Z Kokavy", bpm: 76, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "36. Kamarádi moji", bpm: 80, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "37. Stavěli, stavěli", bpm: 147, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "37. Stavěli, stavěli 2", bpm: 105, beatsPerMeasure: 3, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "38. Nocka 6", bpm: 69, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "39. Bylo tu, není tu", bpm: 0, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "40. Řekněte mamce", bpm: 70, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true},
-    { name: "41. Z Kokavy", bpm: 76, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: false},
-    { name: "42. Zabili", bpm: 70, beatsPerMeasure: 1, subdivision: 1, accentBeats: [0], drums: true }
+    { name: "1. Zabili", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "2. Křížem krážem", bpm: 120, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "3. Tmavá nocka 1", bpm: 75, beatsPerMeasure: 2, accentBeats: [0], drums: false},
+    { name: "4. Z Kokavy", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "5. Ani tak nehoří", bpm: 60, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "6. Nepůjdu od tebe", bpm: 160, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "7. Šibeničky", bpm: 110, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "8. Tmavá Nocka 2", bpm: 64, beatsPerMeasure: 6, accentBeats: [0], drums: true},
+    { name: "9. Horní, Dolní Ořešany", bpm: 87, beatsPerMeasure: 2, accentBeats: [0], drums: true},
+    { name: "10. Nebudu orat ani set", bpm: 120, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "11. + 12. Tam v tom lese v Bukovině", bpm: 128, beatsPerMeasure: 2, accentBeats: [0], drums: true},
+    { name: "13. Tmavá nocka 3", bpm: 74, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "14. Kterýpak jste který", bpm: 82, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "15. Nepovídej milá mamince", bpm: 94, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "16. Tam u řeky na kraji", bpm: 174, beatsPerMeasure: 3, accentBeats: [0], drums: true},
+    { name: "17. Pod javorem na tom poli", bpm: 165, beatsPerMeasure: 3, accentBeats: [0], drums: true},
+    { name: "18. Tam nahoře na tom kopci", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "19. Večer zmizí", bpm: 78, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "20. Ach bože přebože", bpm: 176, beatsPerMeasure: 8, accentBeats: [0, 3, 6], drums: true},
+    { name: "21. Chytají mě chlapci", bpm: 58, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "22. Kamarádi moji", bpm: 80, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "23. Milá moje milá", bpm: 97, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "24. Pojďme chlapci", bpm: 144, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "25. Zazpívejme,chlapci", bpm: 66, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "26. Jede forman dolinou", bpm: 144, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "27. Tmavá nocka 4", bpm: 65, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "28. My jsme dobří chlapci", bpm: 68, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "29. Nocka 5", bpm: 66, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "30. Chodí horou", bpm: 125, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "31. Nepůjdu od tebe", bpm: 68, beatsPerMeasure: 4, accentBeats: [0], drums: false},
+    { name: "32. Jatelinka", bpm: 132, beatsPerMeasure: 4, accentBeats: [0], drums: true},
+    { name: "33. Tam u řeky na kraji", bpm: 174, beatsPerMeasure: 3, accentBeats: [0], drums: true},
+    { name: "34. Ani tak nehoří", bpm: 60, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "35. Z Kokavy", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "36. Kamarádi moji", bpm: 80, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "37. Stavěli, stavěli", bpm: 147, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "37. Stavěli, stavěli 2", bpm: 105, beatsPerMeasure: 3, accentBeats: [0], drums: true},
+    { name: "38. Nocka 6", bpm: 69, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "39. Bylo tu, není tu", bpm: 0, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "40. Řekněte mamce", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true},
+    { name: "41. Z Kokavy", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
+    { name: "42. Zabili", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true }
 ];
 
 let currentPreset = tempoPresets[0];
@@ -138,12 +137,9 @@ function scheduleTicks() {
 
         playTick(isAccented);
 
-        // **Trigger flash only on whole beats (not subdivisions)**
-        if (beatInMeasure % subdivision === 0) {
-            flashAlpha = isAccented ? 200 : 100; // Brighter flash on accented beats
-        }
+        flashAlpha = isAccented ? 200 : 100; // Brighter flash on accented beats
 
-        nextTickTime += interval / 1000 / subdivision;
+        nextTickTime += interval / 1000;
         beatCount++;
     }
     setTimeout(scheduleTicks, 25);
@@ -151,7 +147,6 @@ function scheduleTicks() {
 
 function startMetronome() {
     updateBPM();
-    subdivision = currentPreset.subdivision;
     isRunning = true;
     startTime = millis();
     nextTickTime = audioCtx.currentTime;
@@ -166,11 +161,11 @@ function updateBPM() {
 
     // Calculate how far into the current beat we are (in audio context time)
     let timeNow = audioCtx.currentTime;
-    let timeSinceLastTick = timeNow - (nextTickTime - oldInterval / 1000 / subdivision);
-    let beatProgressRatio = timeSinceLastTick / (oldInterval / 1000 / subdivision);
+    let timeSinceLastTick = timeNow - (nextTickTime - oldInterval / 1000);
+    let beatProgressRatio = timeSinceLastTick / (oldInterval / 1000);
 
     // Adjust next tick time based on new interval
-    nextTickTime = timeNow + ((1 - beatProgressRatio) * (interval / 1000 / subdivision));
+    nextTickTime = timeNow + ((1 - beatProgressRatio) * (interval / 1000));
 
     // Also update startTime to keep visuals synchronized
     let visualTimeNow = millis();
@@ -223,7 +218,7 @@ function handleKeyPress(event) {
 
 function updatePresetDisplay() {
     let display = document.getElementById("presetDisplay");
-    display.textContent = `${currentPreset.name} (${currentPreset.bpm} BPM, Dob: ${currentPreset.beatsPerMeasure}, Sub: ${currentPreset.subdivision}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}])`;
+    display.textContent = `${currentPreset.name} (${currentPreset.bpm} BPM, Dob: ${currentPreset.beatsPerMeasure}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}])`;
 }
 
 function createUI() {
@@ -234,7 +229,7 @@ function createUI() {
         let presetDiv = document.createElement("div");
         presetDiv.innerHTML = `
             <strong>${preset.name || "(Empty)"}</strong><br>
-            ${preset.bpm > 0 ? `${preset.bpm} BPM | Dob: ${preset.beatsPerMeasure} | Sub: ${preset.subdivision} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
+            ${preset.bpm > 0 ? `${preset.bpm} BPM | Dob: ${preset.beatsPerMeasure} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
         `;
         presetDiv.style.padding = "8px";
         presetDiv.style.border = "1px solid #555";
