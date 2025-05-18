@@ -218,7 +218,12 @@ function handleKeyPress(event) {
 
 function updatePresetDisplay() {
     let display = document.getElementById("presetDisplay");
-    display.textContent = `${currentPreset.name} (${currentPreset.bpm} BPM, Dob: ${currentPreset.beatsPerMeasure}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}])`;
+    display.innerHTML = `
+        <div style="text-align: center;">
+            <span style="font-size: 2em;">${currentPreset.name}</span><br>
+            <span style="font-size: 0.8em;">${currentPreset.bpm} BPM, Dob: ${currentPreset.beatsPerMeasure}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}]</span>
+        </div>
+    `;
 }
 
 function createUI() {
