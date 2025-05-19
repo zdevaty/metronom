@@ -17,6 +17,7 @@
             height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
         .small-text {
             font-size: 0.8em;
@@ -37,9 +38,6 @@
     <div id="metronomeContainer" style="width: 70%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
       <h1 id="presetDisplay">Metronom</h1>
       <div id="metronomeCanvas"></div>
-      <div id="controls" style="margin-top: 10px; display: flex; gap: 10px;">
-        <button onclick="stopMetronome()">Stop</button>
-      </div>
     </div>
 
     <!-- Right preset container -->
