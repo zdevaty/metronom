@@ -5,6 +5,10 @@ import (
 )
 
 func main() {
+	// Serve shared resources
+	sharedFS := http.FileServer(http.Dir("./shared"))
+	http.Handle("/shared/", http.StripPrefix("/shared", sharedFS))
+
 	// Serve live version at root
 	liveFS := http.FileServer(http.Dir("./frontend"))
 	http.Handle("/", liveFS)

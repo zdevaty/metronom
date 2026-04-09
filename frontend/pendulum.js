@@ -1,3 +1,4 @@
+// Refactored metronome implementation using shared modules
 const VISUAL_OFFSET_MS = -0; // Visual offset in milliseconds (adjust as needed)
 
 let angle = -45; // Starting angle for pendulum
@@ -14,60 +15,24 @@ let nextTickTime = 0;
 let flashAlpha = 0; // Controls flash intensity
 const FLASH_DECAY = 50; // How fast the flash fades out
 
-let tempoPresets = [
-    { name: "69. Předehra", bpm: 132, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "1. Zapili, zeblili", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "2. Kreuz und quer", bpm: 120, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "3. Tmavá prcka 1", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "4. Skokani", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "5. Ani tak nehoní", bpm: 65, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "6. Nepůjdu do tebe", bpm: 160, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "7. Na zelené louce šukeničky", bpm: 110, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "8. Tmavá socka 2", bpm: 64, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "9. Horní, Dolní Ošahání", bpm: 87, beatsPerMeasure: 2, accentBeats: [0], drums: true},
-    { name: "10. Nebude orál ani sex", bpm: 120, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "11. + 12. Tam v tom lese v Bukvicovně", bpm: 128, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "13. Tmavá šprcka 3", bpm: 74, beatsPerMeasure: 1 , accentBeats: [0], drums: true},
-    { name: "14. Kterýpaxte který", bpm: 82, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "15. Nenapovídej, milá, mamince", bpm: 94, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "16. Tam u řeky nakadí", bpm: 174, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "17. Pod lavorem na tom poli", bpm: 165, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "18. Tam nahoře na tom chlapci", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "19. Ve mně zmizí, přijde ráno", bpm: 78, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "20. Och, ach, bože, přebože", bpm: 176, beatsPerMeasure: 8, accentBeats: [0, 3, 6], drums: true},
-    { name: "21. Lechtají mě chlapci", bpm: 58, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "22. Zmrdi moji", bpm: 80, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "23. Milá moje pila", bpm: 97, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "24. Pijme, chlapci, pojďme srát", bpm: 144, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "25. Zapíchejme, chlapci", bpm: 66, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "26. Jebe forman dolinou", bpm: 144, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "27. Tmavá grcka 4", bpm: 65, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "28. My jsme bobří chlapci", bpm: 68, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "29. DivnoNocka 5", bpm: 66, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "30. Chodí holou", bpm: 125, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "31. Nepůjdu do tebe", bpm: 68, beatsPerMeasure: 4, accentBeats: [0], drums: false},
-    { name: "32. Prdelinka", bpm: 132, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "33. Tam u řeky kakají", bpm: 174, beatsPerMeasure: 3, accentBeats: [0], drums: true},
-    { name: "34. Ani tak nehoní", bpm: 60, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "35. Klokani", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "36. Kakamrdi moji", bpm: 80, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "37. Stavěli, stavěli", bpm: 147, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "38. Tmavá močka 6", bpm: 69, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "40. Řekněte prdel, proPavla", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "41. Z Kokotavy", bpm: 76, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "42. Zapili, vyblili", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "", bpm: 0, beatsPerMeasure: 1, accentBeats: [0], drums: false},
-    { name: "D. Pojďme, chlapci", bpm: 144, beatsPerMeasure: 1, accentBeats: [0], drums: true},
-    { name: "D. Zapili, vyblili", bpm: 70, beatsPerMeasure: 1, accentBeats: [0], drums: true}
-];
+// Initialize shared modules
+const config = getMetronomeConfig();
+const presetLoader = new PresetLoader();
 
-let currentPreset = tempoPresets[0];
-
-function setup() {
-    let canvas = createCanvas(800, 800);
+async function setup() {
+    let canvas = createCanvas(config.canvasWidth, config.canvasHeight);
     canvas.parent('metronomeCanvas'); // Place canvas in specific div
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Load presets first
+    try {
+        await presetLoader.loadPresets(config.presetFile);
+        console.log('Presets loaded successfully');
+    } catch (error) {
+        console.error('Failed to load presets:', error);
+    }
+    
     loadSounds();
     createUI();
     window.addEventListener("keydown", handleKeyPress);
@@ -99,7 +64,7 @@ function drawMetronome() {
     // Set the pivot clearly visible, a bit down from top center
     translate(width / 2, height * 0.85);
 
-    const pendulumLength = height * 0.7;
+    const pendulumLength = height * config.pendulumLengthRatio;
     const arcDiameter = pendulumLength * 2;
 
     // Draw the visible swing range
@@ -116,10 +81,10 @@ function drawMetronome() {
 }
 
 function loadSounds() {
-    fetch("tick.mp3").then(response => response.arrayBuffer()).then(data => {
+    fetch(config.tickSound).then(response => response.arrayBuffer()).then(data => {
         audioCtx.decodeAudioData(data, buffer => tickBuffer = buffer);
     });
-    fetch("tock.mp3").then(response => response.arrayBuffer()).then(data => {
+    fetch(config.tockSound).then(response => response.arrayBuffer()).then(data => {
         audioCtx.decodeAudioData(data, buffer => accentBuffer = buffer);
     });
 }
@@ -134,8 +99,8 @@ function playTick(isAccented) {
 function scheduleTicks() {
     if (!isRunning) return;
     while (nextTickTime < audioCtx.currentTime + 0.1) {
-        let beatInMeasure = beatCount % currentPreset.beatsPerMeasure;
-        let isAccented = currentPreset.accentBeats.includes(beatInMeasure);
+        let beatInMeasure = beatCount % presetLoader.getCurrentPreset().beatsPerMeasure;
+        let isAccented = presetLoader.getCurrentPreset().accentBeats.includes(beatInMeasure);
 
         playTick(isAccented);
 
@@ -158,7 +123,7 @@ function startMetronome() {
 
 function updateBPM() {
     let oldInterval = interval;
-    bpm = currentPreset.bpm;
+    bpm = presetLoader.getCurrentPreset().bpm;
     interval = 60000 / bpm;
 
     // Calculate how far into the current beat we are (in audio context time)
@@ -184,26 +149,28 @@ function stopMetronome() {
 }
 
 function setPreset(preset) {
-    currentPreset = preset;
+    presetLoader.setCurrentPreset(presetIndex);
     startMetronome();
     updatePresetDisplay();
 }
 
 function handleKeyPress(event) {
     if (event.key === "ArrowRight") {
-        presetIndex = (presetIndex + 1) % tempoPresets.length;
-        setPreset(tempoPresets[presetIndex]);
+        presetLoader.nextPreset();
+        presetIndex = presetLoader.getCurrentPresetIndex();
+        setPreset(presetLoader.getCurrentPreset());
     } else if (event.key === "ArrowLeft") {
-        presetIndex = (presetIndex - 1 + tempoPresets.length) % tempoPresets.length;
-        setPreset(tempoPresets[presetIndex]);
+        presetLoader.previousPreset();
+        presetIndex = presetLoader.getCurrentPresetIndex();
+        setPreset(presetLoader.getCurrentPreset());
     } else if (event.key === " ") {
         isRunning ? stopMetronome() : startMetronome();
     } else if (event.key === "ArrowUp") {
-        currentPreset.bpm++;
+        presetLoader.updateCurrentPresetBPM(1);
         updateBPM();
         updatePresetDisplay();
     } else if (event.key === "ArrowDown") {
-        currentPreset.bpm--;
+        presetLoader.updateCurrentPresetBPM(-1);
         updateBPM();
         updatePresetDisplay();
     }
@@ -220,53 +187,47 @@ function handleKeyPress(event) {
 
 function updatePresetDisplay() {
     let display = document.getElementById("presetDisplay");
-    display.innerHTML = `
-        <div style="text-align: center;">
-            <span style="font-size: 2em;">${currentPreset.name}</span><br>
-            <span style="font-size: 0.8em;">${currentPreset.bpm} BPM, Dob: ${currentPreset.beatsPerMeasure}, Accent: [${currentPreset.accentBeats.map(n => n + 1).join(', ')}]</span>
-        </div>
-    `;
+    let preset = presetLoader.getCurrentPreset();
+    
+    if (preset) {
+        document.querySelector('.preset-name').textContent = preset.name;
+        document.querySelector('.preset-details').textContent = 
+            `${preset.bpm} BPM, Dob: ${preset.beatsPerMeasure}, Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]`;
+    } else {
+        document.querySelector('.preset-name').textContent = 'Loading...';
+        document.querySelector('.preset-details').textContent = '';
+    }
 }
 
 function createUI() {
     const leftContainer = document.getElementById("presetContainerLeft");
     const rightContainer = document.getElementById("presetContainerRight");
 
-    tempoPresets.forEach((preset, index) => {
+    // Check if presets are loaded
+    if (!presetLoader.presets || presetLoader.presets.length === 0) {
+        console.warn('No presets available for UI creation');
+        return;
+    }
+
+    presetLoader.presets.forEach((preset, index) => {
         let presetDiv = document.createElement("div");
+        presetDiv.className = `preset-item ${preset.drums ? 'drums-true' : 'drums-false'}`;
         presetDiv.innerHTML = `
             <strong>${preset.name}</strong><br>
             <span class="small-text">
                 ${preset.bpm > 0 ? `${preset.bpm} BPM | Dob: ${preset.beatsPerMeasure} | Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]` : "—"}
             </span>
         `;
-        presetDiv.style.padding = "1px";
-        presetDiv.style.border = "1px solid #555";
-        presetDiv.style.borderRadius = "2px";
-        presetDiv.style.cursor = "pointer";
-        presetDiv.style.textAlign = "center";
-        presetDiv.style.lineHeight = "1";
-        presetDiv.style.userSelect = "none";
-        presetDiv.style.marginBottom = "2px";
-
-        if (!preset.drums) {
-            presetDiv.style.backgroundColor = "#222"; // Darker gray
-            presetDiv.style.color = "#888"; // Lighter text
-            presetDiv.style.borderColor = "#444"; // Softer border
-        } else {
-            presetDiv.style.backgroundColor = "#333"; // Normal background
-            presetDiv.style.color = "#ddd"; // Normal text color
-            presetDiv.style.borderColor = "#555"; // Normal border
-        }
 
         presetDiv.addEventListener("click", () => {
             presetIndex = index;
-            setPreset(preset);
+            presetLoader.setCurrentPreset(index);
+            setPreset(presetLoader.getCurrentPreset());
             highlightSelectedPreset([leftContainer, rightContainer], presetDiv);
         });
 
-        // Place first 20 presets in left column, the rest in right column
-        if (index < 23) {
+        // Place first N presets in left column, the rest in right column
+        if (index < config.presetColumnSplit) {
             leftContainer.appendChild(presetDiv);
         } else {
             rightContainer.appendChild(presetDiv);
@@ -275,27 +236,26 @@ function createUI() {
 }
 
 function highlightSelectedPreset(containers, selectedPresetDiv) {
-    presetIter = 0;
+    // Check if presets are loaded
+    if (!presetLoader.presets || presetLoader.presets.length === 0) {
+        console.warn('Cannot highlight preset - no presets loaded');
+        return;
+    }
+
+    // Reset all presets to their default styling
     containers.forEach(container => {
         Array.from(container.children).forEach((div) => {
-            let preset = tempoPresets[presetIter++]; // Get corresponding preset
-
-            if (!preset.drums) {
-                // Keep gray tint for presets without drums
-                div.style.backgroundColor = "#222";
-                div.style.color = "#888";
-                div.style.borderColor = "#444";
-            } else {
-                // Normal colors for other presets
-                div.style.backgroundColor = "#333";
-                div.style.color = "#ddd";
-                div.style.borderColor = "#555";
+            const presetIndex = Array.from(container.children).indexOf(div);
+            const preset = presetLoader.presets[presetIndex];
+            
+            if (preset) {
+                div.className = `preset-item ${preset.drums ? 'drums-true' : 'drums-false'}`;
             }
         });
     });
 
     // Apply highlight only to the selected preset
-    selectedPresetDiv.style.backgroundColor = "#005299";
-    selectedPresetDiv.style.borderColor = "#66b8ff";
-    selectedPresetDiv.style.color = "#fff";
+    if (selectedPresetDiv) {
+        selectedPresetDiv.classList.add('selected');
+    }
 }

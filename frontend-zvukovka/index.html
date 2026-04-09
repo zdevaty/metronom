@@ -5,43 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zvukovka</title>
     <script src="p5.min.js"></script>
+    <script src="/shared/config.js"></script>
+    <script src="/shared/preset-loader.js"></script>
     <script src="pendulum.js" defer></script>
-    <style>
-        body {
-            background: black;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-overflow: hidden;
-        }
-        .small-text {
-            font-size: 0.8em;
-        }
-        #controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="/shared/styles.css">
 </head>
 <body>
   <div style="display: flex; width: 100%; height: 100vh;">
     <!-- Left preset container -->
-    <div id="presetContainerLeft" style="width: 15%; overflow-y: auto; padding: 5px;"></div>
+    <div id="presetContainerLeft" class="preset-container"></div>
 
     <!-- Metronome (center) -->
-    <div id="metronomeContainer" style="width: 70%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <h1 id="presetDisplay">Zvukovka</h1>
+    <div id="metronomeContainer">
+      <div id="presetDisplay">
+        <span class="preset-name">Zvukovka</span>
+        <span class="preset-details"></span>
+      </div>
       <div id="metronomeCanvas"></div>
     </div>
 
     <!-- Right preset container -->
-    <div id="presetContainerRight" style="width: 15%; overflow-y: auto; padding: 5px;"></div>
+    <div id="presetContainerRight" class="preset-container"></div>
   </div>
 </body>
 
