@@ -68,8 +68,8 @@ function draw() {
         let beatProgress = (time % (state.interval * 2)) / (state.interval * 2); // Use 2x interval for full swing cycle
         // Full swing cycle: 0->1 becomes 0->2PI for complete back-and-forth motion
         let pendulumPhase = beatProgress * PI * 2;
-        // Use cosine for proper pendulum motion (starts at rightmost position)
-        state.angle = Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
+        // Use negative cosine to start from left position (when phase=0, cos(0)=1, so -cos(0)=-1 = leftmost)
+        state.angle = -Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
     }
 
     // **Apply the flash effect as a white overlay**
@@ -185,8 +185,18 @@ function _startMetronomeAfterAudioReady() {
     updateBPM();
     state.isRunning = true;
     state.startTime = millis();
-    state.nextTickTime = state.audioCtx.currentTime + (state.interval / 1000); // Schedule first tick
+    state.nextTickTime = state.audioCtx.currentTime; // Schedule first tick immediately
     state.beatCount = 0;
+    
+    // Play the first tick immediately
+    let beatInMeasure = state.beatCount % presetLoader.getCurrentPreset().beatsPerMeasure;
+    let isAccented = presetLoader.getCurrentPreset().accentBeats.includes(beatInMeasure);
+    playTick(isAccented);
+    state.flashAlpha = isAccented ? 200 : 100;
+    
+    state.beatCount++;
+    state.nextTickTime += state.interval / 1000;
+    
     scheduleTicks();
 }
 
