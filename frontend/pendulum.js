@@ -63,9 +63,13 @@ function draw() {
     let time = millis() - state.startTime + VISUAL_OFFSET_MS; // offset added here
 
     if (state.isRunning) {
-        let totalBeatsElapsed = (time / state.interval) / 2;
-        let phase = (totalBeatsElapsed - 0.25 % 1);
-        state.angle = Math.sin(phase * PI * 2) * PENDULUM_SWING_AMPLITUDE;
+        // Pendulum swings at quarter the BPM rate (one full swing = two beats)
+        // This makes it tick at both left and right extremes
+        let beatProgress = (time % (state.interval * 2)) / (state.interval * 2); // Use 2x interval for full swing cycle
+        // Full swing cycle: 0->1 becomes 0->2PI for complete back-and-forth motion
+        let pendulumPhase = beatProgress * PI * 2;
+        // Use cosine for proper pendulum motion (starts at rightmost position)
+        state.angle = Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
     }
 
     // **Apply the flash effect as a white overlay**
@@ -163,34 +167,53 @@ function startMetronome() {
         return;
     }
 
+    // Resume audio context if suspended (required by modern browsers)
+    if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume().then(() => {
+            console.log('Audio context resumed');
+            _startMetronomeAfterAudioReady();
+        }).catch(error => {
+            console.error('Failed to resume audio context:', error);
+        });
+        return;
+    }
+    
+    _startMetronomeAfterAudioReady();
+}
+
+function _startMetronomeAfterAudioReady() {
     updateBPM();
     state.isRunning = true;
     state.startTime = millis();
-    state.nextTickTime = state.audioCtx.currentTime;
+    state.nextTickTime = state.audioCtx.currentTime + (state.interval / 1000); // Schedule first tick
     state.beatCount = 0;
     scheduleTicks();
 }
 
 function updateBPM() {
-    let oldInterval = state.interval;
+    // Simplified BPM update - just reset timing to current beat
     state.bpm = presetLoader.getCurrentPreset().bpm;
     state.interval = 60000 / state.bpm;
-
-    // Calculate how far into the current beat we are (in audio context time)
-    let timeNow = state.audioCtx.currentTime;
-    let timeSinceLastTick = timeNow - (state.nextTickTime - oldInterval / 1000);
-    let beatProgressRatio = timeSinceLastTick / (oldInterval / 1000);
-
-    // Adjust next tick time based on new interval
-    state.nextTickTime = timeNow + ((1 - beatProgressRatio) * (state.interval / 1000));
-
-    // Also update startTime to keep visuals synchronized
-    let visualTimeNow = millis();
-    let timeSinceVisualStart = visualTimeNow - state.startTime;
-    let visualProgressRatio = timeSinceVisualStart / oldInterval;
-
-    // Recalculate startTime for visuals
-    state.startTime = visualTimeNow - visualProgressRatio * state.interval;
+    
+    // Reset timing to align with current beat for simplicity
+    // This causes a small timing reset but is much simpler and more robust
+    if (state.isRunning) {
+        // Align next tick with the next beat based on current audio time
+        let timeNow = state.audioCtx.currentTime;
+        let beatProgress = (timeNow - state.nextTickTime) / (state.interval / 1000);
+        
+        // If we're more than halfway through the current beat, schedule next beat
+        // Otherwise, keep current scheduling but use new interval
+        if (beatProgress > 0.5) {
+            state.nextTickTime = timeNow + (state.interval / 1000);
+        } else {
+            // Adjust next tick time to maintain current beat position with new interval
+            state.nextTickTime = timeNow + ((1 - beatProgress) * (state.interval / 1000));
+        }
+        
+        // Reset visual timing to stay synchronized
+        state.startTime = millis();
+    }
 }
 
 function stopMetronome() {
