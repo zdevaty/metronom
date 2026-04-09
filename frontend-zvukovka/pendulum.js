@@ -68,8 +68,8 @@ function draw() {
         let beatProgress = (time % (state.interval * 2)) / (state.interval * 2); // Use 2x interval for full swing cycle
         // Full swing cycle: 0->1 becomes 0->2PI for complete back-and-forth motion
         let pendulumPhase = beatProgress * PI * 2;
-        // Use cosine to start from right position (when phase=0, cos(0)=1, so angle = PENDULUM_SWING_AMPLITUDE = rightmost)
-        state.angle = Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
+        // Use negative cosine to start from left position (when phase=0, cos(0)=1, so -cos(0)=-1 = leftmost)
+        state.angle = -Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
     }
 
     // **Apply the flash effect as a white overlay**
