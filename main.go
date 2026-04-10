@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -17,5 +19,10 @@ func main() {
 	zvukovkaFS := http.FileServer(http.Dir("./frontend-zvukovka"))
 	http.Handle("/zvukovka/", http.StripPrefix("/zvukovka", zvukovkaFS))
 
-	http.ListenAndServe(":8000", nil)
+	fmt.Println("Starting metronome server on :8000")
+	err := http.ListenAndServe(":8000", nil)
+	if err != nil {
+		fmt.Printf("Server error: %v\n", err)
+		os.Exit(1)
+	}
 }
