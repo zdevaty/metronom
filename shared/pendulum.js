@@ -201,28 +201,39 @@ function _startMetronomeAfterAudioReady() {
 }
 
 function updateBPM() {
-    // Simplified BPM update - just reset timing to current beat
+    const oldBPM = state.bpm;
+    const oldInterval = state.interval;
+    
+    // Update to new BPM
     state.bpm = presetLoader.getCurrentPreset().bpm;
     state.interval = 60000 / state.bpm;
     
-    // Reset timing to align with current beat for simplicity
-    // This causes a small timing reset but is much simpler and more robust
+    // Smooth tempo transition with phase awareness
     if (state.isRunning) {
-        // Align next tick with the next beat based on current audio time
         let timeNow = state.audioCtx.currentTime;
-        let beatProgress = (timeNow - state.nextTickTime) / (state.interval / 1000);
         
-        // If we're more than halfway through the current beat, schedule next beat
-        // Otherwise, keep current scheduling but use new interval
-        if (beatProgress > 0.5) {
+        // Calculate current position in beat cycle for smooth transition
+        let visualTimeElapsed = millis() - state.startTime;
+        let beatProgress = (visualTimeElapsed % (oldInterval + VISUAL_OFFSET_MS)) / (oldInterval + VISUAL_OFFSET_MS);
+        beatProgress = Math.max(0, Math.min(1, beatProgress));
+        
+        // For smooth transitions, align with next natural beat boundary
+        // This prevents timing glitches while maintaining reasonable continuity
+        if (beatProgress > 0.7) {
+            // If we're near the end of current beat, schedule next beat immediately with new tempo
             state.nextTickTime = timeNow + (state.interval / 1000);
+        } else if (beatProgress > 0.3) {
+            // If we're in the middle of a beat, finish current beat with old timing
+            // then continue with new tempo
+            let timeRemaining = (1 - beatProgress) * (oldInterval / 1000);
+            state.nextTickTime = timeNow + timeRemaining;
         } else {
-            // Adjust next tick time to maintain current beat position with new interval
+            // If we're early in the beat, align with current beat position
             state.nextTickTime = timeNow + ((1 - beatProgress) * (state.interval / 1000));
         }
         
-        // Reset visual timing to stay synchronized
-        state.startTime = millis();
+        // Update visual timing smoothly
+        state.startTime = millis() - (beatProgress * (state.interval + VISUAL_OFFSET_MS));
     }
 }
 
@@ -237,7 +248,13 @@ function setPreset(preset) {
     updatePresetDisplay();
 }
 
+// Add debounce variables
+let lastTempoChangeTime = 0;
+const TEMPO_CHANGE_DEBOUNCE_MS = 50; // Minimum time between tempo changes
+
 function handleKeyPress(event) {
+    const now = Date.now();
+    
     if (event.key === "ArrowRight") {
         presetLoader.nextPreset();
         state.presetIndex = presetLoader.getCurrentPresetIndex();
@@ -249,13 +266,21 @@ function handleKeyPress(event) {
     } else if (event.key === " ") {
         state.isRunning ? stopMetronome() : startMetronome();
     } else if (event.key === "ArrowUp") {
-        presetLoader.updateCurrentPresetBPM(1);
-        updateBPM();
-        updatePresetDisplay();
+        // Debounce rapid tempo changes to prevent missing beats
+        if (now - lastTempoChangeTime > TEMPO_CHANGE_DEBOUNCE_MS) {
+            presetLoader.updateCurrentPresetBPM(1);
+            updateBPM();
+            updatePresetDisplay();
+            lastTempoChangeTime = now;
+        }
     } else if (event.key === "ArrowDown") {
-        presetLoader.updateCurrentPresetBPM(-1);
-        updateBPM();
-        updatePresetDisplay();
+        // Debounce rapid tempo changes to prevent missing beats
+        if (now - lastTempoChangeTime > TEMPO_CHANGE_DEBOUNCE_MS) {
+            presetLoader.updateCurrentPresetBPM(-1);
+            updateBPM();
+            updatePresetDisplay();
+            lastTempoChangeTime = now;
+        }
     }
 
     // **Find the selected preset's div and highlight it**
