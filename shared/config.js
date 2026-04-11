@@ -13,8 +13,8 @@ const MetronomeConfig = {
     presetColumnSplit: 23, // First N presets go to left column
     
     // Audio settings
-    tickSound: 'tick.mp3',
-    tockSound: 'tock.mp3',
+    tickSound: '/shared/tick.mp3',
+    tockSound: '/shared/tock.mp3',
     
     // Variant-specific configurations
     variants: {
