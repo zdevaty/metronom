@@ -1,57 +1,76 @@
 // Refactored metronome implementation using shared modules
-const VISUAL_OFFSET_MS = -0; // Visual offset in milliseconds (adjust as needed)
-const START_ANGLE = -45; // Starting angle for pendulum
-const DEFAULT_BPM = 120; // Default BPM
-const FLASH_DECAY = 50; // How fast the flash fades out
-const PENDULUM_ARC_START = -135; // Pendulum arc start angle
-const PENDULUM_ARC_END = -45; // Pendulum arc end angle
-const PENDULUM_SWING_AMPLITUDE = 45; // Pendulum swing amplitude in degrees
-const PENDULUM_PIVOT_Y_RATIO = 0.85; // Pendulum pivot Y position ratio
+const VISUAL_OFFSET_MS = 0;
+const START_ANGLE = -45;
+const DEFAULT_BPM = 120;
+const PENDULUM_ARC_START = -135;
+const PENDULUM_ARC_END = -45;
+const PENDULUM_SWING_AMPLITUDE = 45;
+const PENDULUM_PIVOT_Y_RATIO = 0.85;
 
-// Encapsulate metronome state in a class
+const LOOKAHEAD_SEC = 0.05;
+const SCHEDULER_PERIOD_MS = 25;
+const FLASH_DURATION_SEC = 0.08;
+const FLASH_ACCENT_ALPHA = 230;
+const FLASH_NORMAL_ALPHA = 140;
+const FLASH_ACCENT_COLOR = '#ffaa22';
+const FLASH_NORMAL_COLOR = '#ffffff';
+
 class MetronomeState {
     constructor() {
         this.angle = START_ANGLE;
         this.bpm = DEFAULT_BPM;
-        this.interval = 60000 / this.bpm;
-        this.lastTick = 0;
+        this.rate = DEFAULT_BPM / 60;       // beats per second
+        this.phaseAnchorTime = 0;           // audio context time at the anchor
+        this.phaseAnchorValue = 0;          // phase value at the anchor
+        this.nextScheduledBeat = 0;         // next integer beat not yet queued
         this.isRunning = false;
         this.audioCtx = null;
-        this.startTime = 0;
-        this.beatCount = 0;
         this.presetIndex = 0;
         this.tickBuffer = null;
         this.accentBuffer = null;
-        this.nextTickTime = 0;
-        this.flashAlpha = 0;
+        this.flashOverlay = null;
     }
 }
 
-// Initialize shared modules
 const config = getMetronomeConfig();
 const presetLoader = new PresetLoader();
 const state = new MetronomeState();
 
+function phaseAt(t) {
+    return state.phaseAnchorValue + (t - state.phaseAnchorTime) * state.rate;
+}
+
+function timeOfBeat(n) {
+    return state.phaseAnchorTime + (n - state.phaseAnchorValue) / state.rate;
+}
+
 async function setup() {
     let canvas = createCanvas(config.canvasWidth, config.canvasHeight);
-    canvas.parent('metronomeCanvas'); // Place canvas in specific div
+    canvas.parent('metronomeCanvas');
 
-    // Initialize audio context
+    state.flashOverlay = document.createElement('div');
+    state.flashOverlay.id = 'flashOverlay';
+    state.flashOverlay.style.cssText =
+        'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999;';
+    document.body.appendChild(state.flashOverlay);
+
     try {
         state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
         console.error('Fatal error: Failed to initialize audio context:', error);
         return;
     }
-    
-    // Load presets first
+
     try {
         await presetLoader.loadPresets(config.presetFile);
         console.log('Presets loaded successfully');
     } catch (error) {
         console.error('Failed to load presets:', error);
     }
-    
+
+    const initialPreset = presetLoader.getCurrentPreset();
+    if (initialPreset) state.bpm = initialPreset.bpm;
+
     loadSounds();
     createUI();
     window.addEventListener("keydown", handleKeyPress);
@@ -59,24 +78,38 @@ async function setup() {
 }
 
 function draw() {
-    background(0); // Dark background
-    let time = millis() - state.startTime + VISUAL_OFFSET_MS; // offset added here
+    background(0);
+
+    let flashAlpha = 0;
+    let flashColor = FLASH_NORMAL_COLOR;
 
     if (state.isRunning) {
-        // Pendulum swings at quarter the BPM rate (one full swing = two beats)
-        // This makes it tick at both left and right extremes
-        let beatProgress = (time % (state.interval * 2)) / (state.interval * 2); // Use 2x interval for full swing cycle
-        // Full swing cycle: 0->1 becomes 0->2PI for complete back-and-forth motion
-        let pendulumPhase = beatProgress * PI * 2;
-        // Use negative cosine to start from left position (when phase=0, cos(0)=1, so -cos(0)=-1 = leftmost)
-        state.angle = -Math.cos(pendulumPhase) * PENDULUM_SWING_AMPLITUDE;
+        const t = state.audioCtx.currentTime + VISUAL_OFFSET_MS / 1000;
+        const phi = phaseAt(t);
+
+        // Pendulum cycles every 2 beats: phase 0 -> -45°, phase 1 -> +45°, phase 2 -> -45°.
+        const swingPhase = (((phi % 2) + 2) % 2) * Math.PI;
+        state.angle = -Math.cos(swingPhase) * PENDULUM_SWING_AMPLITUDE;
+
+        const lastBeat = Math.floor(phi);
+        if (lastBeat >= 0) {
+            const sinceLastBeat = (phi - lastBeat) / state.rate;
+            if (sinceLastBeat < FLASH_DURATION_SEC) {
+                const preset = presetLoader.getCurrentPreset();
+                if (preset) {
+                    const beatInBar = lastBeat % preset.beatsPerMeasure;
+                    const accented = preset.accentBeats.includes(beatInBar);
+                    const baseAlpha = accented ? FLASH_ACCENT_ALPHA : FLASH_NORMAL_ALPHA;
+                    flashAlpha = baseAlpha * (1 - sinceLastBeat / FLASH_DURATION_SEC);
+                    flashColor = accented ? FLASH_ACCENT_COLOR : FLASH_NORMAL_COLOR;
+                }
+            }
+        }
     }
 
-    // **Apply the flash effect as a white overlay**
-    if (state.flashAlpha > 0) {
-        fill(255, state.flashAlpha); // White overlay with variable transparency
-        rect(0, 0, width, height); // Cover entire screen
-        state.flashAlpha = max(0, state.flashAlpha - FLASH_DECAY); // Reduce flash gradually
+    if (state.flashOverlay) {
+        state.flashOverlay.style.background = flashColor;
+        state.flashOverlay.style.opacity = flashAlpha / 255;
     }
 
     drawMetronome();
@@ -84,18 +117,15 @@ function draw() {
 
 function drawMetronome() {
     push();
-    // Set the pivot clearly visible, a bit down from top center
     translate(width / 2, height * PENDULUM_PIVOT_Y_RATIO);
 
     const pendulumLength = height * config.pendulumLengthRatio;
     const arcDiameter = pendulumLength * 2;
 
-    // Draw the visible swing range
     noStroke();
     fill(30);
     arc(0, 0, arcDiameter, arcDiameter, radians(PENDULUM_ARC_START), radians(PENDULUM_ARC_END), PIE);
 
-    // Rotate pendulum (upside down)
     rotate(radians(state.angle - 180));
     stroke(255);
     strokeWeight(8);
@@ -104,7 +134,6 @@ function drawMetronome() {
 }
 
 function loadSounds() {
-    // Load tick sound with error handling
     fetch(config.tickSound)
         .then(response => {
             if (!response.ok) throw new Error(`Failed to load tick sound: ${response.status}`);
@@ -114,10 +143,8 @@ function loadSounds() {
         .then(buffer => state.tickBuffer = buffer)
         .catch(error => {
             console.error('Fatal error: Failed to load tick sound:', error);
-            // This is fatal - metronome won't work without sounds
         });
 
-    // Load tock sound with error handling
     fetch(config.tockSound)
         .then(response => {
             if (!response.ok) throw new Error(`Failed to load tock sound: ${response.status}`);
@@ -127,47 +154,47 @@ function loadSounds() {
         .then(buffer => state.accentBuffer = buffer)
         .catch(error => {
             console.error('Fatal error: Failed to load tock sound:', error);
-            // This is fatal - metronome won't work without sounds
         });
 }
 
-function playTick(isAccented) {
-    // Check if audio buffers are loaded
+function playTickAt(audioTime, isAccented) {
     if (!state.tickBuffer || !state.accentBuffer) {
         console.error('Fatal error: Audio buffers not loaded');
         return;
     }
-
-    let source = state.audioCtx.createBufferSource();
+    const source = state.audioCtx.createBufferSource();
     source.buffer = isAccented ? state.accentBuffer : state.tickBuffer;
     source.connect(state.audioCtx.destination);
-    source.start(state.nextTickTime);
+    source.start(audioTime);
 }
 
 function scheduleTicks() {
     if (!state.isRunning) return;
-    while (state.nextTickTime < state.audioCtx.currentTime + 0.1) {
-        let beatInMeasure = state.beatCount % presetLoader.getCurrentPreset().beatsPerMeasure;
-        let isAccented = presetLoader.getCurrentPreset().accentBeats.includes(beatInMeasure);
 
-        playTick(isAccented);
-
-        state.flashAlpha = isAccented ? 200 : 100; // Brighter flash on accented beats
-
-        state.nextTickTime += state.interval / 1000;
-        state.beatCount++;
+    const preset = presetLoader.getCurrentPreset();
+    if (!preset) {
+        setTimeout(scheduleTicks, SCHEDULER_PERIOD_MS);
+        return;
     }
-    setTimeout(scheduleTicks, 25);
+
+    const horizon = state.audioCtx.currentTime + LOOKAHEAD_SEC;
+    while (timeOfBeat(state.nextScheduledBeat) <= horizon) {
+        const t = timeOfBeat(state.nextScheduledBeat);
+        const beatInBar = state.nextScheduledBeat % preset.beatsPerMeasure;
+        const isAccented = preset.accentBeats.includes(beatInBar);
+        playTickAt(t, isAccented);
+        state.nextScheduledBeat++;
+    }
+
+    setTimeout(scheduleTicks, SCHEDULER_PERIOD_MS);
 }
 
 function startMetronome() {
-    // Check if audio context is ready
     if (!state.audioCtx) {
         console.error('Fatal error: Audio context not initialized');
         return;
     }
 
-    // Resume audio context if suspended (required by modern browsers)
     if (state.audioCtx.state === 'suspended') {
         state.audioCtx.resume().then(() => {
             console.log('Audio context resumed');
@@ -177,64 +204,33 @@ function startMetronome() {
         });
         return;
     }
-    
+
     _startMetronomeAfterAudioReady();
 }
 
 function _startMetronomeAfterAudioReady() {
-    updateBPM();
+    const preset = presetLoader.getCurrentPreset();
+    if (preset) {
+        state.bpm = preset.bpm;
+    }
+    state.rate = state.bpm / 60;
+    state.phaseAnchorTime = state.audioCtx.currentTime;
+    state.phaseAnchorValue = 0;
+    state.nextScheduledBeat = 0;
     state.isRunning = true;
-    state.startTime = millis();
-    state.nextTickTime = state.audioCtx.currentTime; // Schedule first tick immediately
-    state.beatCount = 0;
-    
-    // Play the first tick immediately
-    let beatInMeasure = state.beatCount % presetLoader.getCurrentPreset().beatsPerMeasure;
-    let isAccented = presetLoader.getCurrentPreset().accentBeats.includes(beatInMeasure);
-    playTick(isAccented);
-    state.flashAlpha = isAccented ? 200 : 100;
-    
-    state.beatCount++;
-    state.nextTickTime += state.interval / 1000;
-    
     scheduleTicks();
 }
 
-function updateBPM() {
-    const oldBPM = state.bpm;
-    const oldInterval = state.interval;
-    
-    // Update to new BPM
-    state.bpm = presetLoader.getCurrentPreset().bpm;
-    state.interval = 60000 / state.bpm;
-    
-    // Smooth tempo transition with phase awareness
-    if (state.isRunning) {
-        let timeNow = state.audioCtx.currentTime;
-        
-        // Calculate current position in beat cycle for smooth transition
-        let visualTimeElapsed = millis() - state.startTime;
-        let beatProgress = (visualTimeElapsed % (oldInterval + VISUAL_OFFSET_MS)) / (oldInterval + VISUAL_OFFSET_MS);
-        beatProgress = Math.max(0, Math.min(1, beatProgress));
-        
-        // For smooth transitions, align with next natural beat boundary
-        // This prevents timing glitches while maintaining reasonable continuity
-        if (beatProgress > 0.7) {
-            // If we're near the end of current beat, schedule next beat immediately with new tempo
-            state.nextTickTime = timeNow + (state.interval / 1000);
-        } else if (beatProgress > 0.3) {
-            // If we're in the middle of a beat, finish current beat with old timing
-            // then continue with new tempo
-            let timeRemaining = (1 - beatProgress) * (oldInterval / 1000);
-            state.nextTickTime = timeNow + timeRemaining;
-        } else {
-            // If we're early in the beat, align with current beat position
-            state.nextTickTime = timeNow + ((1 - beatProgress) * (state.interval / 1000));
-        }
-        
-        // Update visual timing smoothly
-        state.startTime = millis() - (beatProgress * (state.interval + VISUAL_OFFSET_MS));
+function setBPM(newBpm) {
+    state.bpm = newBpm;
+    if (!state.isRunning) {
+        state.rate = newBpm / 60;
+        return;
     }
+    const t = state.audioCtx.currentTime;
+    state.phaseAnchorValue = phaseAt(t);
+    state.phaseAnchorTime = t;
+    state.rate = newBpm / 60;
 }
 
 function stopMetronome() {
@@ -244,17 +240,12 @@ function stopMetronome() {
 
 function setPreset(preset) {
     presetLoader.setCurrentPreset(state.presetIndex);
+    if (preset) state.bpm = preset.bpm;
     startMetronome();
     updatePresetDisplay();
 }
 
-// Add debounce variables
-let lastTempoChangeTime = 0;
-const TEMPO_CHANGE_DEBOUNCE_MS = 50; // Minimum time between tempo changes
-
 function handleKeyPress(event) {
-    const now = Date.now();
-    
     if (event.key === "ArrowRight") {
         presetLoader.nextPreset();
         state.presetIndex = presetLoader.getCurrentPresetIndex();
@@ -266,24 +257,13 @@ function handleKeyPress(event) {
     } else if (event.key === " ") {
         state.isRunning ? stopMetronome() : startMetronome();
     } else if (event.key === "ArrowUp") {
-        // Debounce rapid tempo changes to prevent missing beats
-        if (now - lastTempoChangeTime > TEMPO_CHANGE_DEBOUNCE_MS) {
-            presetLoader.updateCurrentPresetBPM(1);
-            updateBPM();
-            updatePresetDisplay();
-            lastTempoChangeTime = now;
-        }
+        setBPM(state.bpm + 1);
+        updatePresetDisplay();
     } else if (event.key === "ArrowDown") {
-        // Debounce rapid tempo changes to prevent missing beats
-        if (now - lastTempoChangeTime > TEMPO_CHANGE_DEBOUNCE_MS) {
-            presetLoader.updateCurrentPresetBPM(-1);
-            updateBPM();
-            updatePresetDisplay();
-            lastTempoChangeTime = now;
-        }
+        setBPM(state.bpm - 1);
+        updatePresetDisplay();
     }
 
-    // **Find the selected preset's div and highlight it**
     const containers = [document.getElementById("presetContainerLeft"), document.getElementById("presetContainerRight")];
     let allPresets = [...containers[0].children, ...containers[1].children];
     let selectedPresetDiv = allPresets[state.presetIndex];
@@ -296,20 +276,19 @@ function handleKeyPress(event) {
 function updatePresetDisplay() {
     let display = document.getElementById("presetDisplay");
     let preset = presetLoader.getCurrentPreset();
-    
-    // Add null checks for DOM elements
+
     const presetNameElement = document.querySelector('.preset-name');
     const presetDetailsElement = document.querySelector('.preset-details');
-    
+
     if (!presetNameElement || !presetDetailsElement) {
         console.warn('Preset display elements not found');
         return;
     }
-    
+
     if (preset) {
         presetNameElement.textContent = preset.name;
-        presetDetailsElement.textContent = 
-            `${preset.bpm} BPM, Dob: ${preset.beatsPerMeasure}, Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]`;
+        presetDetailsElement.textContent =
+            `${state.bpm} BPM, Dob: ${preset.beatsPerMeasure}, Accent: [${preset.accentBeats.map(n => n + 1).join(', ')}]`;
     } else {
         presetNameElement.textContent = 'Loading...';
         presetDetailsElement.textContent = '';
@@ -320,13 +299,11 @@ function createUI() {
     const leftContainer = document.getElementById("presetContainerLeft");
     const rightContainer = document.getElementById("presetContainerRight");
 
-    // Add null checks for containers
     if (!leftContainer || !rightContainer) {
         console.warn('Preset containers not found');
         return;
     }
 
-    // Check if presets are loaded
     if (!presetLoader.presets || presetLoader.presets.length === 0) {
         console.warn('No presets available for UI creation');
         return;
@@ -349,7 +326,6 @@ function createUI() {
             highlightSelectedPreset([leftContainer, rightContainer], presetDiv);
         });
 
-        // Place first N presets in left column, the rest in right column
         if (index < config.presetColumnSplit) {
             leftContainer.appendChild(presetDiv);
         } else {
@@ -359,33 +335,29 @@ function createUI() {
 }
 
 function highlightSelectedPreset(containers, selectedPresetDiv) {
-    // Check if presets are loaded
     if (!presetLoader.presets || presetLoader.presets.length === 0) {
         console.warn('Cannot highlight preset - no presets loaded');
         return;
     }
 
-    // Add null check for containers
     if (!containers || containers.length === 0) {
         console.warn('No containers provided for highlighting');
         return;
     }
 
-    // Reset all presets to their default styling
     containers.forEach(container => {
         if (!container) return;
-        
+
         Array.from(container.children).forEach((div) => {
             const presetIndex = Array.from(container.children).indexOf(div);
             const preset = presetLoader.presets[presetIndex];
-            
+
             if (preset) {
                 div.className = `preset-item ${preset.drums ? 'drums-true' : 'drums-false'}`;
             }
         });
     });
 
-    // Apply highlight only to the selected preset
     if (selectedPresetDiv) {
         selectedPresetDiv.classList.add('selected');
     }

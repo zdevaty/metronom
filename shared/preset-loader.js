@@ -55,9 +55,4 @@ class PresetLoader {
     getCurrentPresetIndex() {
         return this.currentPresetIndex;
     }
-    
-    updateCurrentPresetBPM(delta) {
-        this.currentPreset.bpm += delta;
-        return this.currentPreset.bpm;
-    }
 }
