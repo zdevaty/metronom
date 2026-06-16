@@ -28,7 +28,6 @@ class MetronomeState {
         this.presetIndex = 0;
         this.tickBuffer = null;
         this.accentBuffer = null;
-        this.flashOverlay = null;
     }
 }
 
@@ -47,12 +46,6 @@ function timeOfBeat(n) {
 async function setup() {
     let canvas = createCanvas(config.canvasWidth, config.canvasHeight);
     canvas.parent('metronomeCanvas');
-
-    state.flashOverlay = document.createElement('div');
-    state.flashOverlay.id = 'flashOverlay';
-    state.flashOverlay.style.cssText =
-        'position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999;';
-    document.body.appendChild(state.flashOverlay);
 
     try {
         state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -107,9 +100,12 @@ function draw() {
         }
     }
 
-    if (state.flashOverlay) {
-        state.flashOverlay.style.background = flashColor;
-        state.flashOverlay.style.opacity = flashAlpha / 255;
+    if (flashAlpha > 0) {
+        const overlay = color(flashColor);
+        overlay.setAlpha(flashAlpha);
+        noStroke();
+        fill(overlay);
+        rect(0, 0, width, height);
     }
 
     drawMetronome();
