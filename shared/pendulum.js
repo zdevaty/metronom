@@ -100,18 +100,10 @@ function draw() {
         }
     }
 
-    if (flashAlpha > 0) {
-        const overlay = color(flashColor);
-        overlay.setAlpha(flashAlpha);
-        noStroke();
-        fill(overlay);
-        rect(0, 0, width, height);
-    }
-
-    drawMetronome();
+    drawMetronome(flashAlpha, flashColor);
 }
 
-function drawMetronome() {
+function drawMetronome(flashAlpha, flashColor) {
     push();
     translate(width / 2, height * PENDULUM_PIVOT_Y_RATIO);
 
@@ -121,6 +113,13 @@ function drawMetronome() {
     noStroke();
     fill(30);
     arc(0, 0, arcDiameter, arcDiameter, radians(PENDULUM_ARC_START), radians(PENDULUM_ARC_END), PIE);
+
+    if (flashAlpha > 0) {
+        const overlay = color(flashColor);
+        overlay.setAlpha(flashAlpha);
+        fill(overlay);
+        arc(0, 0, arcDiameter, arcDiameter, radians(PENDULUM_ARC_START), radians(PENDULUM_ARC_END), PIE);
+    }
 
     rotate(radians(state.angle - 180));
     stroke(255);
