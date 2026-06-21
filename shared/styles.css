@@ -76,9 +76,9 @@ body {
 }
 
 #presetDisplay .preset-name {
-    font-size: 2em;
+    font-size: 5em;
 }
 
 #presetDisplay .preset-details {
-    font-size: 0.8em;
+    font-size: 1.2em;
 }
