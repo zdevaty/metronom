@@ -5,9 +5,9 @@ const MetronomeConfig = {
     FLASH_DECAY: 50,
     
     // Canvas settings
-    canvasWidth: 800,
-    canvasHeight: 800,
-    pendulumLengthRatio: 0.7,
+    canvasWidth: 880,
+    canvasHeight: 660,
+    pendulumLengthRatio: 0.9,
     
     // UI settings
     presetColumnSplit: 23, // First N presets go to left column
